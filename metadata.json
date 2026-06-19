@@ -1,0 +1,6 @@
+{
+  "name": "UMKM Manager",
+  "description": "Sistem manajemen UMKM lengkap dengan Dashboard performa, pencatatan Produk & Stok, POS Kasir Transaksi, loyalitas Pelanggan, dan Laporan Penjualan mendalam.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
