@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, Package, ShoppingCart, Users, Settings, 
   Bell, LogOut, Store, ShieldCheck, ChevronRight, CornerDownRight, Menu, X
@@ -22,6 +22,33 @@ import POSTab from './components/POSTab';
 import CustomersTab from './components/CustomersTab';
 import ReportsTab from './components/ReportsTab';
 
+// Initial LocalStorage Seeding (runs exactly once on file load)
+if (typeof window !== 'undefined' && localStorage.getItem('tokomakmur_initialized') !== 'true') {
+  localStorage.setItem('tokomakmur_products', JSON.stringify(INITIAL_PRODUCTS));
+  localStorage.setItem('tokomakmur_customers', JSON.stringify(INITIAL_CUSTOMERS));
+  localStorage.setItem('tokomakmur_activities', JSON.stringify(INITIAL_ACTIVITIES));
+  localStorage.setItem('tokomakmur_transactions', JSON.stringify(INITIAL_TRANSACTIONS));
+  localStorage.setItem('tokomakmur_businessSettings', JSON.stringify({
+    shopName: 'Toko Makmur Jaya',
+    address: 'Jl. Sudirman No. 45, Jakarta Selatan',
+    whatsapp: '+62 812-3456-7890',
+    email: 'hello@makmurjaya.id',
+    loyaltyRate: 10000,
+    sendReceipt: true,
+    sendBalance: false
+  }));
+  localStorage.setItem('tokomakmur_accounts', JSON.stringify([
+    { id: 'acc-1', username: 'budi', name: 'Budi Antoro', role: 'Admin', passwordHash: 'budi123' },
+    { id: 'acc-2', username: 'staf1', name: 'Hasan Basri', role: 'Staff', passwordHash: 'staf123' }
+  ]));
+  localStorage.setItem('tokomakmur_notifications', JSON.stringify([
+    { id: 'n-1', msg: 'Pembayaran #TRX-8821 Selesai senilai Rp 150.000', read: false },
+    { id: 'n-2', msg: 'Peringatan: Stok Roti Bakar Coklat hampir habis (Sisa 3)', read: false },
+    { id: 'n-3', msg: 'Siti Aminah telah didaftarkan sebagai Member Baru tier Gold', read: true }
+  ]));
+  localStorage.setItem('tokomakmur_initialized', 'true');
+}
+
 export default function App() {
   // Authentication Role
   const [role, setRole] = useState<'Admin' | 'Staff' | null>(null);
@@ -30,29 +57,44 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<string>('Dashboard');
 
   // Multi-user Registered Staff/Cashier Accounts
-  const [accounts, setAccounts] = useState<any[]>([
-    { id: 'acc-1', username: 'budi', name: 'Budi Antoro', role: 'Admin', passwordHash: 'budi123' },
-    { id: 'acc-2', username: 'staf1', name: 'Hasan Basri', role: 'Staff', passwordHash: 'staf123' }
-  ]);
+  const [accounts, setAccounts] = useState<any[]>(() => {
+    const saved = localStorage.getItem('tokomakmur_accounts');
+    return saved ? JSON.parse(saved) : [];
+  });
 
   // Current Logged in session user details
   const [currentUser, setCurrentUser] = useState<any>(null);
 
   // Core Global States
-  const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
-  const [customers, setCustomers] = useState<Customer[]>(INITIAL_CUSTOMERS);
-  const [activities, setActivities] = useState<Activity[]>(INITIAL_ACTIVITIES);
-  const [transactions, setTransactions] = useState<Transaction[]>(INITIAL_TRANSACTIONS);
+  const [products, setProducts] = useState<Product[]>(() => {
+    const saved = localStorage.getItem('tokomakmur_products');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [customers, setCustomers] = useState<Customer[]>(() => {
+    const saved = localStorage.getItem('tokomakmur_customers');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [activities, setActivities] = useState<Activity[]>(() => {
+    const saved = localStorage.getItem('tokomakmur_activities');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [transactions, setTransactions] = useState<Transaction[]>(() => {
+    const saved = localStorage.getItem('tokomakmur_transactions');
+    return saved ? JSON.parse(saved) : [];
+  });
 
   // Business Configurations state
-  const [businessSettings, setBusinessSettings] = useState({
-    shopName: 'Toko Makmur Jaya',
-    address: 'Jl. Sudirman No. 45, Jakarta Selatan',
-    whatsapp: '+62 812-3456-7890',
-    email: 'hello@makmurjaya.id',
-    loyaltyRate: 10000,
-    sendReceipt: true,
-    sendBalance: false
+  const [businessSettings, setBusinessSettings] = useState(() => {
+    const saved = localStorage.getItem('tokomakmur_businessSettings');
+    return saved ? JSON.parse(saved) : {
+      shopName: 'Toko Makmur Jaya',
+      address: 'Jl. Sudirman No. 45, Jakarta Selatan',
+      whatsapp: '+62 812-3456-7890',
+      email: 'hello@makmurjaya.id',
+      loyaltyRate: 10000,
+      sendReceipt: true,
+      sendBalance: false
+    };
   });
 
   // Mobile drawer panel toggle
@@ -60,11 +102,46 @@ export default function App() {
 
   // Notifications Popover Toggle
   const [isNotifOpen, setIsNotifOpen] = useState(false);
-  const [notifications, setNotifications] = useState([
-    { id: 'n-1', msg: 'Pembayaran #TRX-8821 Selesai senilai Rp 150.000', read: false },
-    { id: 'n-2', msg: 'Peringatan: Stok Roti Bakar Coklat hampir habis (Sisa 3)', read: false },
-    { id: 'n-3', msg: 'Siti Aminah telah didaftarkan sebagai Member Baru tier Gold', read: true }
-  ]);
+  const [notifications, setNotifications] = useState(() => {
+    const saved = localStorage.getItem('tokomakmur_notifications');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  // Auto-persistence Effects (using serialized primitive strings to satisfy system instructions)
+  const productsStr = JSON.stringify(products);
+  useEffect(() => {
+    localStorage.setItem('tokomakmur_products', productsStr);
+  }, [productsStr]);
+
+  const customersStr = JSON.stringify(customers);
+  useEffect(() => {
+    localStorage.setItem('tokomakmur_customers', customersStr);
+  }, [customersStr]);
+
+  const activitiesStr = JSON.stringify(activities);
+  useEffect(() => {
+    localStorage.setItem('tokomakmur_activities', activitiesStr);
+  }, [activitiesStr]);
+
+  const transactionsStr = JSON.stringify(transactions);
+  useEffect(() => {
+    localStorage.setItem('tokomakmur_transactions', transactionsStr);
+  }, [transactionsStr]);
+
+  const accountsStr = JSON.stringify(accounts);
+  useEffect(() => {
+    localStorage.setItem('tokomakmur_accounts', accountsStr);
+  }, [accountsStr]);
+
+  const businessSettingsStr = JSON.stringify(businessSettings);
+  useEffect(() => {
+    localStorage.setItem('tokomakmur_businessSettings', businessSettingsStr);
+  }, [businessSettingsStr]);
+
+  const notificationsStr = JSON.stringify(notifications);
+  useEffect(() => {
+    localStorage.setItem('tokomakmur_notifications', notificationsStr);
+  }, [notificationsStr]);
 
   const handleLogin = (userRole: 'Admin' | 'Staff', matchedUsername: string) => {
     setRole(userRole);
